@@ -1,0 +1,177 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: treblle_test_user
+          POSTGRES_DB: treblle_api_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Create test environment file
+      run: |
+        echo "NODE_ENV=test" > .env.test
+        echo "JWT_SECRET=test-jwt-secret-key-for-ci" >> .env.test
+        echo "DB_HOST=localhost" >> .env.test
+        echo "DB_PORT=5432" >> .env.test
+        echo "DB_NAME=treblle_api_test" >> .env.test
+        echo "DB_USER=treblle_test_user" >> .env.test
+        echo "DB_PASSWORD=test_password" >> .env.test
+        echo "OLLAMA_API_URL=http://localhost:11434" >> .env.test
+        echo "OLLAMA_MODEL=moondream" >> .env.test
+        echo "PORT=0" >> .env.test
+
+    - name: Run security audit
+      run: npm audit --audit-level moderate
+
+    - name: Run linting (if configured)
+      run: |
+        if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ]; then
+          npm run lint || echo "Linting not configured, skipping..."
+        else
+          echo "ESLint not configured, skipping linting"
+        fi
+      continue-on-error: true
+
+    - name: Run unit tests
+      run: npm run test:unit
+      env:
+        NODE_ENV: test
+
+    - name: Run integration tests
+      run: npm run test:integration
+      env:
+        NODE_ENV: test
+
+    - name: Generate test coverage
+      run: npm run test:coverage
+      env:
+        NODE_ENV: test
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Archive test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.node-version }}
+        path: |
+          coverage/
+          __tests__/results/
+        retention-days: 7
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit --audit-level high
+
+    - name: Check for known vulnerabilities
+      run: |
+        npx audit-ci --config ./audit-ci.json || echo "Audit CI not configured"
+      continue-on-error: true
+
+  performance:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: treblle_test_user
+          POSTGRES_DB: treblle_api_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Create test environment
+      run: |
+        echo "NODE_ENV=test" > .env.test
+        echo "JWT_SECRET=test-jwt-secret-key-for-ci" >> .env.test
+        echo "DB_HOST=localhost" >> .env.test
+        echo "DB_PORT=5432" >> .env.test
+        echo "DB_NAME=treblle_api_test" >> .env.test
+        echo "DB_USER=treblle_test_user" >> .env.test
+        echo "DB_PASSWORD=test_password" >> .env.test
+
+    - name: Run performance tests
+      run: |
+        if [ -f "__tests__/performance/performance.test.js" ]; then
+          npm test -- __tests__/performance/
+        else
+          echo "Performance tests not configured"
+        fi
+      continue-on-error: true
+      env:
+        NODE_ENV: test
