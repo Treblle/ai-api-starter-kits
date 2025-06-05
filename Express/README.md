@@ -83,6 +83,7 @@ PORT=3000
 NODE_ENV=development
 
 # JWT Configuration
+# Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 JWT_SECRET=your_super_secret_jwt_key_here
 JWT_EXPIRES_IN=24h
 
