@@ -28,7 +28,7 @@ A production-grade Node.js API starter kit showcasing **Treblle** monitoring wit
 
 ```bash
 git clone https://github.com/Treblle/ai-api-starter-kits.git
-cd Node
+cd ai-api-starter-kits/Node
 npm install
 ```
 
