@@ -27,12 +27,75 @@ A production-grade Node.js API starter kit showcasing **Treblle** monitoring wit
 ### 1. Clone and Install
 
 ```bash
-git clone <repository-url>
-cd nodejs-apyhub-summarizer
+git clone https://github.com/Treblle/ai-api-starter-kits.git
+cd ai-api-starter-kits/node
 npm install
 ```
 
-### 2. Environment Setup
+### 2. Database Setup
+
+**Important:** Follow these steps carefully to set up PostgreSQL with proper permissions.
+
+#### Step 1: Connect to PostgreSQL as superuser
+
+```bash
+# For Windows (Git Bash/MINGW64/PowerShell)
+psql -U postgres
+
+# For Linux/macOS
+sudo -u postgres psql
+```
+
+#### Step 2: Create database and user with full permissions
+
+```sql
+-- Create a new user with a strong password
+CREATE USER treblle_app WITH PASSWORD 'TreblleApp2024!';
+
+-- Create a new database owned by the user
+CREATE DATABASE treblle_summarizer OWNER treblle_app;
+
+-- Grant all necessary privileges
+GRANT ALL PRIVILEGES ON DATABASE treblle_summarizer TO treblle_app;
+
+-- Connect to the new database to set up schema permissions
+\c treblle_summarizer
+
+-- Grant schema permissions
+GRANT ALL ON SCHEMA public TO treblle_app;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO treblle_app;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO treblle_app;
+
+-- Set default privileges for future objects
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO treblle_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO treblle_app;
+
+-- Verify the setup
+\l treblle_summarizer
+\du treblle_app
+
+-- Exit PostgreSQL
+\q
+```
+
+#### Step 3: Initialize the database tables
+
+After setting up the database and user, run the initialization script:
+
+```bash
+node init-database.js
+```
+
+You should see:
+
+```
+🚀 Initializing database...
+📅 Connected to PostgreSQL database
+✅ Database tables initialized
+✅ Database initialization completed successfully
+```
+
+### 3. Environment Setup
 
 ```bash
 cp .env.example .env
@@ -46,7 +109,7 @@ PORT=3000
 NODE_ENV=development
 
 # Database Configuration
-DATABASE_URL=postgres://username:password@localhost:5432/treblle_demo
+DATABASE_URL=postgres://treblle_app:TreblleApp2024!@localhost:5432/treblle_summarizer
 
 # JWT Configuration  
 # Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
@@ -64,37 +127,7 @@ APYHUB_API_KEY=your-apyhub-api-key
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 ```
 
-### 3. Database Setup
-
-Create a PostgreSQL database and update the `DATABASE_URL` in your `.env` file. The application will automatically create the required tables on startup.
-
-```bash
-# Connect to PostgreSQL as superuser
-sudo -u postgres psql
-
-# Create database and user
-CREATE DATABASE treblle_demo;
-CREATE USER treblle_user WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE treblle_demo TO treblle_user;
-
-# Exit PostgreSQL
-\q
-```
-
-#### For Windows Users (Git Bash/MINGW64/PowerShell)
-
-```bash
-# Connect to PostgreSQL (use default postgres user)
-psql -U postgres
-
-# Create database and user
-CREATE DATABASE treblle_demo;
-CREATE USER treblle_user WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE treblle_demo1 TO treblle_user;
-
-# Exit PostgreSQL
-\q
-```
+**Note:** If you used different database credentials in Step 2, update the `DATABASE_URL` accordingly.
 
 ### 4. Start Development Server
 
@@ -102,11 +135,63 @@ GRANT ALL PRIVILEGES ON DATABASE treblle_demo1 TO treblle_user;
 npm run dev
 ```
 
+You should see:
+
+```
+🚀 Server running on port 3000
+📊 Treblle monitoring active
+🔗 Local: http://localhost:3000
+🌐 To expose via ngrok: npx ngrok http 3000
+📅 Connected to PostgreSQL database
+✅ Database tables initialized
+```
+
 The API will be available at `http://localhost:3000`
 
 ### 5. Test with Frontend
 
 Visit `http://localhost:3000` in your browser to use the included web interface.
+
+## 🔧 Troubleshooting
+
+### Database Permission Issues
+
+If you encounter "permission denied for schema public" errors:
+
+1. **Clean up existing database and users:**
+
+```bash
+psql -U postgres
+```
+
+```sql
+-- Remove any existing project databases and users
+DROP DATABASE IF EXISTS treblle_demo;
+DROP DATABASE IF EXISTS treblle_demo5;
+DROP USER IF EXISTS treblle_user;
+DROP USER IF EXISTS treblle_user6;
+
+-- Follow the database setup steps above
+```
+
+2. **Verify permissions:**
+
+```sql
+-- Connect to your database
+\c treblle_summarizer
+
+-- Check user permissions
+\du treblle_app
+
+-- Check database ownership
+\l treblle_summarizer
+```
+
+### Common Database Setup Errors
+
+- **"role cannot be dropped because some objects depend on it"**: Run the cleanup commands in the troubleshooting section above
+- **"database does not exist"**: Make sure you created the database with the exact name used in your `.env` file
+- **"authentication failed"**: Verify your password in the `DATABASE_URL` matches what you set when creating the user
 
 ## 🏗️ Architecture
 
@@ -129,11 +214,11 @@ nodejs-apyhub-summarizer/
 │   └── errorHandler.js    # Global error handling
 ├── db/
 │   └── db.js              # PostgreSQL connection & queries
+├── init-database.js       # Database table initialization script
 ├── public/
-│   └── frontend.html      # Web interface
+│   └── index.html         # Web interface
 ├── .env.example           # Environment variables template
 ├── Dockerfile             # Container configuration
-├── vercel.json            # Vercel deployment config
 └── README.md              # This file
 ```
 
@@ -247,10 +332,15 @@ docker run -p 3000:3000 --env-file .env apyhub-summarizer
 - [Treblle Node.js SDK](https://github.com/Treblle/treblle-node)
 - [Aspen API Testing Tool](https://treblle.com/product/aspen)
 
+### ApyHub Resources
+
+- [ApyHub Documentation](https://apyhub.com/docs)
+- [ApyHub API Reference](https://apyhub.com/docs/api)
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Built with ❤️ using Node.js, and Treblle**
+**Built with ❤️ using Node.js, ApyHub, and Treblle**
