@@ -1,0 +1,774 @@
+openapi: 3.0.3
+info:
+  title: ApyHub Summarizer API
+  description: |
+    A production-grade Node.js API showcasing Treblle monitoring with ApyHub's AI Summarization service.
+
+    ## Features
+    - 🧠 AI-powered text and URL summarization
+    - 📊 Real-time monitoring with Treblle
+    - 🔐 JWT authentication
+    - 🛡️ Production security measures
+    - 📈 Performance optimized
+
+    ## Authentication
+    This API uses JWT Bearer tokens for authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+
+    ## Rate Limits
+    - General API: 100 requests per 15 minutes per IP
+    - Authentication: 5 attempts per 15 minutes per IP
+    - Summarization: 10 requests per minute per user
+
+    ## Monitoring
+    This API is monitored in real-time using Treblle. Visit your Treblle dashboard for detailed analytics.
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://github.com/your-repo/nodejs-apyhub-summarizer
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://your-domain.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Summarization
+    description: AI-powered text and URL summarization
+  - name: System
+    description: System health and information endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Check API health status and basic information
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: 1.0.0
+
+  /docs:
+    get:
+      tags:
+        - System
+      summary: API documentation
+      description: Get API endpoints overview and documentation
+      responses:
+        "200":
+          description: API documentation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  version:
+                    type: string
+                  description:
+                    type: string
+                  endpoints:
+                    type: object
+                  authentication:
+                    type: string
+                  treblle:
+                    type: string
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user
+      description: Create a new user account with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Valid email address
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+                  description: Password with uppercase, lowercase, number, and special character
+                  example: SecurePass123!
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many registration attempts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user and receive JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  example: SecurePass123!
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+
+  /auth/profile:
+    get:
+      tags:
+        - Authentication
+      summary: Get user profile
+      description: Get current authenticated user's profile information
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  message:
+                    type: string
+                    example: Profile retrieved successfully
+        "401":
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token
+      description: Generate a new JWT token using the current valid token
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Token refreshed successfully
+                  token:
+                    type: string
+                  tokenType:
+                    type: string
+                    example: Bearer
+                  expiresIn:
+                    type: string
+                    example: 24h
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Logout user (client-side token invalidation)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logout successful. Please remove the token from your client.
+                  hint:
+                    type: string
+
+  /api/summarize:
+    post:
+      tags:
+        - Summarization
+      summary: Summarize text
+      description: |
+        Generate an AI-powered summary of the provided text using ApyHub's summarization API.
+
+        **Text Requirements:**
+        - Minimum 10 characters
+        - Maximum ~12,000 words (16,385 tokens)
+
+        **Rate Limits:**
+        - 10 requests per minute per authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  minLength: 10
+                  maxLength: 50000
+                  description: Text content to summarize
+                  example: "Artificial intelligence (AI) is intelligence demonstrated by machines, in contrast to the natural intelligence displayed by humans and animals. Leading AI textbooks define the field as the study of intelligent agents..."
+                summaryLength:
+                  type: string
+                  enum: [short, medium, long]
+                  default: short
+                  description: |
+                    Desired summary length:
+                    - short: max 20 words
+                    - medium: max 60 words
+                    - long: max 100 words
+                outputLanguage:
+                  type: string
+                  default: en
+                  description: ISO language code for output language
+                  example: en
+      responses:
+        "200":
+          description: Text summarized successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummarizationResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/summarize-url:
+    post:
+      tags:
+        - Summarization
+      summary: Summarize URL content
+      description: |
+        Generate an AI-powered summary of content from the provided URL using ApyHub's summarization API.
+
+        **URL Requirements:**
+        - Must be a valid HTTP/HTTPS URL
+        - Content must be accessible and text-based
+        - Maximum content size: ~12,000 words
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: URL to summarize
+                  example: "https://example.com/article"
+                summaryLength:
+                  type: string
+                  enum: [short, medium, long]
+                  default: short
+                  description: Desired summary length
+                outputLanguage:
+                  type: string
+                  default: en
+                  description: ISO language code for output language
+      responses:
+        "200":
+          description: URL content summarized successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UrlSummarizationResponse"
+        "400":
+          description: Invalid URL or validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+
+  /api/history:
+    get:
+      tags:
+        - Summarization
+      summary: Get summarization history
+      description: Retrieve the authenticated user's summarization history with pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        "200":
+          description: History retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Summarization history retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      summaries:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/SummaryHistoryItem"
+                      pagination:
+                        $ref: "#/components/schemas/Pagination"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/options:
+    get:
+      tags:
+        - Summarization
+      summary: Get summarization options
+      description: Get available summary lengths, supported languages, and service limits
+      responses:
+        "200":
+          description: Options retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Summarization options retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      summaryLengths:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            value:
+                              type: string
+                            description:
+                              type: string
+                      supportedLanguages:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Language"
+                      limits:
+                        type: object
+                        properties:
+                          maxTextLength:
+                            type: string
+                          maxTokens:
+                            type: integer
+                          rateLimit:
+                            type: string
+
+  /api/health:
+    get:
+      tags:
+        - Summarization
+      summary: Summarization service health
+      description: Check the health status of the ApyHub summarization service
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+                    example: healthy
+                  apiKey:
+                    type: string
+                    example: configured
+                  timestamp:
+                    type: string
+                    format: date-time
+        "503":
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+                    example: unhealthy
+                  error:
+                    type: string
+                  timestamp:
+                    type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        createdAt:
+          type: string
+          format: date-time
+
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Login successful
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+          description: JWT access token
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: string
+          example: 24h
+
+    SummarizationResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Text summarized successfully
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              description: Summary record ID
+            originalText:
+              type: string
+              description: Original input text
+            summary:
+              type: string
+              description: Generated summary
+            summaryLength:
+              type: string
+              enum: [short, medium, long]
+            outputLanguage:
+              type: string
+              example: en
+            statistics:
+              type: object
+              properties:
+                originalLength:
+                  type: integer
+                  description: Original text character count
+                summaryCharCount:
+                  type: integer
+                  description: Summary character count
+                compressionRatio:
+                  type: string
+                  example: "15.2%"
+                processingTimeMs:
+                  type: integer
+                  description: Processing time in milliseconds
+            createdAt:
+              type: string
+              format: date-time
+
+    UrlSummarizationResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: URL summarized successfully
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+            sourceUrl:
+              type: string
+              format: uri
+            summary:
+              type: string
+            summaryLength:
+              type: string
+            outputLanguage:
+              type: string
+            statistics:
+              type: object
+              properties:
+                summaryCharCount:
+                  type: integer
+                processingTimeMs:
+                  type: integer
+            createdAt:
+              type: string
+              format: date-time
+
+    SummaryHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        originalText:
+          type: string
+          description: Truncated original text (first 100 chars)
+        summary:
+          type: string
+        summaryLength:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        isUrl:
+          type: boolean
+          description: Whether this was a URL summarization
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 25
+        hasMore:
+          type: boolean
+          example: true
+
+    Language:
+      type: object
+      properties:
+        code:
+          type: string
+          example: en
+        name:
+          type: string
+          example: English
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type or title
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+          description: Additional error details or validation errors
+        timestamp:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+          description: Unique request identifier
+
+    RateLimitError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Too Many Requests
+        message:
+          type: string
+          example: Rate limit exceeded. Please try again later.
+        retryAfter:
+          type: integer
+          description: Seconds until rate limit resets
+
+  examples:
+    TextSummarization:
+      summary: Basic text summarization
+      value:
+        text: "Artificial intelligence (AI) is intelligence demonstrated by machines, in contrast to the natural intelligence displayed by humans and animals. Leading AI textbooks define the field as the study of intelligent agents: any device that perceives its environment and takes actions that maximize its chance of successfully achieving its goals."
+        summaryLength: "medium"
+        outputLanguage: "en"
+
+    UrlSummarization:
+      summary: URL content summarization
+      value:
+        url: "https://en.wikipedia.org/wiki/Artificial_intelligence"
+        summaryLength: "short"
+        outputLanguage: "en"
+
+    LoginRequest:
+      summary: User login
+      value:
+        email: "user@example.com"
+        password: "SecurePass123!"
+
+    RegisterRequest:
+      summary: New user registration
+      value:
+        email: "newuser@example.com"
+        password: "MySecurePassword123!"

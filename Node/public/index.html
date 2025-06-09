@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Summarizer - Powered by Treblle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #FFFFFF 0%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main content area */
+        .main-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        #messageContainer {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(1, 4, 26, 0.15);
+            padding: 40px;
+        }
+
+        .auth-container {
+            max-width: 500px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(1, 4, 26, 0.15);
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #01041A;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #14182F;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .header .how-it-works {
+            color: #14182F;
+            font-size: 0.95em;
+            font-weight: 500;
+            background: #F6F7FA;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border-left: 4px solid #04E8B0;
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .auth-section {
+            background: #F6F7FA;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #0058FF;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #01041A;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #F6F7FA;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #FFFFFF;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #0058FF;
+            box-shadow: 0 0 0 3px rgba(0, 88, 255, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #0058FF 0%, #14182F 100%);
+            color: #FFFFFF;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 88, 255, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secondary-btn {
+            background: linear-gradient(135deg, #04E8B0 0%, #0058FF 100%);
+        }
+
+        .secondary-btn:hover {
+            box-shadow: 0 8px 20px rgba(4, 232, 176, 0.3);
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #FF4757 0%, #14182F 100%);
+        }
+
+        .result-section {
+            background: #F6F7FA;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border-left: 4px solid #0058FF;
+        }
+
+        .error {
+            background: #FFE5E5;
+            color: #C62D42;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #FF4757;
+            box-shadow: 0 4px 12px rgba(198, 45, 66, 0.2);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .success {
+            background: #E5FFF5;
+            color: #0F5132;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #04E8B0;
+            box-shadow: 0 4px 12px rgba(4, 232, 176, 0.2);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #F6F7FA;
+            border-top: 3px solid #0058FF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .flex {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            background: #E5FFF5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #0F5132;
+            border: 1px solid #04E8B0;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #F6F7FA;
+        }
+
+        .welcome-text {
+            color: #01041A;
+            font-size: 1.2em;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #F6F7FA;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            color: #14182F;
+        }
+
+        .tab-button.active {
+            background: #0058FF;
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0, 88, 255, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .treblle-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #01041A;
+            color: #FFFFFF;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(1, 4, 26, 0.3);
+            border: 1px solid #0058FF;
+        }
+
+        .treblle-badge:hover {
+            background: #0058FF;
+            color: #FFFFFF;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 10px;
+            }
+
+            .container,
+            .auth-container {
+                margin: 10px 0;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .flex {
+                flex-direction: column;
+            }
+
+            .input-tabs {
+                flex-direction: column;
+            }
+
+            .top-nav {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Authentication Container -->
+        <div id="authContainer" class="auth-container">
+            <div class="header">
+                <h1>🤖 AI Text Summarizer</h1>
+                <div class="how-it-works">
+                    Paste your text, choose your preferred summary length and language, then let our AI analyze and
+                    condense your content into key insights while preserving the essential meaning.
+                </div>
+            </div>
+
+            <div class="auth-section">
+                <!-- Main Auth Options -->
+                <div id="authMainOptions">
+                    <h3>Authentication Required</h3>
+                    <p style="margin-bottom: 20px;">Please login or register to use the summarization service.</p>
+
+                    <div class="flex">
+                        <button id="loginBtn">Login</button>
+                        <button id="registerBtn" class="secondary-btn">Register</button>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <div id="loginForm" class="hidden">
+                    <h4>Login</h4>
+                    <div class="form-group">
+                        <label for="loginEmail">Email:</label>
+                        <input type="email" id="loginEmail" placeholder="your@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password:</label>
+                        <input type="password" id="loginPassword" placeholder="Your password" required>
+                    </div>
+                    <div class="flex">
+                        <button id="loginSubmitBtn">Login</button>
+                        <button id="cancelLoginBtn" class="secondary-btn">Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Register Form -->
+                <div id="registerForm" class="hidden">
+                    <h4>Register</h4>
+                    <div class="form-group">
+                        <label for="registerEmail">Email:</label>
+                        <input type="email" id="registerEmail" placeholder="your@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Password:</label>
+                        <input type="password" id="registerPassword" placeholder="Minimum 8 characters" required>
+                    </div>
+                    <div class="flex">
+                        <button id="registerSubmitBtn">Register</button>
+                        <button id="cancelRegisterBtn" class="secondary-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Application Container -->
+        <div id="appContainer" class="container hidden">
+            <!-- Top Navigation -->
+            <div class="top-nav">
+                <div class="welcome-text">
+                    Welcome, <span id="userEmail"></span>! 👋
+                </div>
+                <div class="nav-buttons">
+                    <button id="logoutBtn" class="logout-btn">Logout</button>
+                </div>
+            </div>
+
+            <!-- Input Method Tabs -->
+            <div class="input-tabs">
+                <button class="tab-button active" id="textTabBtn">📝 Text Summary</button>
+                <button class="tab-button" id="urlTabBtn">🔗 URL Summary</button>
+            </div>
+
+            <!-- Text Summarization Tab -->
+            <div id="textTab" class="tab-content active">
+                <div class="form-group">
+                    <label for="inputText">Text to Summarize:</label>
+                    <textarea id="inputText" placeholder="Paste your text here (minimum 10 characters)..."
+                        required></textarea>
+                </div>
+
+                <div class="flex">
+                    <div class="form-group" style="flex: 1; margin-right: 10px;">
+                        <label for="summaryLength">Summary Length:</label>
+                        <select id="summaryLength">
+                            <option value="short">Short (max 20 words)</option>
+                            <option value="medium">Medium (max 60 words)</option>
+                            <option value="long">Long (max 100 words)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label for="outputLanguage">Output Language:</label>
+                        <select id="outputLanguage">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex">
+                    <button id="summarizeBtn">
+                        <span id="summarizeLoading" class="loading hidden"></span>
+                        Summarize Text
+                    </button>
+                    <button id="clearTextBtn" class="secondary-btn">Clear</button>
+                </div>
+            </div>
+
+            <!-- URL Summarization Tab -->
+            <div id="urlTab" class="tab-content">
+                <div class="form-group">
+                    <label for="inputUrl">URL to Summarize:</label>
+                    <input type="url" id="inputUrl" placeholder="https://example.com/article" required>
+                </div>
+
+                <div class="flex">
+                    <div class="form-group" style="flex: 1; margin-right: 10px;">
+                        <label for="urlSummaryLength">Summary Length:</label>
+                        <select id="urlSummaryLength">
+                            <option value="short">Short (max 20 words)</option>
+                            <option value="medium">Medium (max 60 words)</option>
+                            <option value="long">Long (max 100 words)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label for="urlOutputLanguage">Output Language:</label>
+                        <select id="urlOutputLanguage">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex">
+                    <button id="summarizeUrlBtn">
+                        <span id="urlLoading" class="loading hidden"></span>
+                        Summarize URL
+                    </button>
+                    <button id="clearUrlBtn" class="secondary-btn">Clear</button>
+                </div>
+            </div>
+
+            <!-- Results Container -->
+            <div id="resultContainer"></div>
+        </div>
+    </div>
+
+    <!-- Messages Container (positioned at top center) -->
+    <div id="messageContainer"></div>
+
+    <script>
+        // Global state
+        let authToken = localStorage.getItem('authToken');
+        let userEmail = localStorage.getItem('userEmail');
+
+        console.log('Initial state:', { authToken: !!authToken, userEmail });
+
+        // Clear any existing auth data on page load for testing
+        // localStorage.removeItem('authToken');
+        // localStorage.removeItem('userEmail');
+        // authToken = null;
+        // userEmail = null;
+
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOM loaded, initializing app...');
+
+            setTimeout(() => {
+                setupEventListeners();
+                initializeApp();
+            }, 100);
+        });
+
+        function initializeApp() {
+            console.log('Checking auth state:', { authToken: !!authToken, userEmail });
+
+            if (authToken && userEmail) {
+                showMainSection();
+            } else {
+                showAuthSection();
+            }
+        }
+
+        function setupEventListeners() {
+            console.log('Setting up event listeners...');
+
+            // Auth buttons
+            document.getElementById('loginBtn').addEventListener('click', showLogin);
+            document.getElementById('registerBtn').addEventListener('click', showRegister);
+            document.getElementById('loginSubmitBtn').addEventListener('click', login);
+            document.getElementById('registerSubmitBtn').addEventListener('click', register);
+            document.getElementById('cancelLoginBtn').addEventListener('click', hideAuthForms);
+            document.getElementById('cancelRegisterBtn').addEventListener('click', hideAuthForms);
+
+            // Main app buttons
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('summarizeBtn').addEventListener('click', summarizeText);
+            document.getElementById('summarizeUrlBtn').addEventListener('click', summarizeUrl);
+            document.getElementById('clearTextBtn').addEventListener('click', clearTextForm);
+            document.getElementById('clearUrlBtn').addEventListener('click', clearUrlForm);
+
+            // Tab buttons
+            document.getElementById('textTabBtn').addEventListener('click', () => switchTab('text'));
+            document.getElementById('urlTabBtn').addEventListener('click', () => switchTab('url'));
+
+            // Enter key handlers
+            document.getElementById('loginEmail').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+            document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+            document.getElementById('registerEmail').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') register();
+            });
+            document.getElementById('registerPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') register();
+            });
+
+            console.log('Event listeners set up successfully');
+        }
+
+        // Authentication functions
+        function showLogin() {
+            console.log('Showing login form');
+            document.getElementById('authMainOptions').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+        }
+
+        function showRegister() {
+            console.log('Showing register form');
+            document.getElementById('authMainOptions').classList.add('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+
+        function hideAuthForms() {
+            console.log('Hiding auth forms');
+            document.getElementById('authMainOptions').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+        }
+
+        function showAuthSection() {
+            console.log('Showing auth section');
+            document.getElementById('authContainer').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+            hideAuthForms();
+        }
+
+        function showMainSection() {
+            console.log('Showing main section');
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = userEmail;
+        }
+
+        // API functions
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const config = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                }
+            };
+
+            if (data) {
+                config.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(endpoint, config);
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || result.error || 'Request failed');
+                }
+
+                return result;
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                console.log('Attempting login...');
+                const result = await apiCall('/auth/login', 'POST', { email, password });
+
+                authToken = result.token;
+                userEmail = result.user.email;
+
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('userEmail', userEmail);
+
+                console.log('Login successful');
+                showMessage('Login successful!');
+                showMainSection();
+
+            } catch (error) {
+                console.error('Login failed:', error);
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function register() {
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            if (!email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                console.log('Attempting registration...');
+                const result = await apiCall('/auth/register', 'POST', { email, password });
+
+                authToken = result.token;
+                userEmail = result.user.email;
+
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('userEmail', userEmail);
+
+                console.log('Registration successful');
+                showMessage('Registration successful! Welcome!');
+                showMainSection();
+
+            } catch (error) {
+                console.error('Registration failed:', error);
+                showMessage(error.message, 'error');
+            }
+        }
+
+        function logout() {
+            console.log('Logging out...');
+            authToken = null;
+            userEmail = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userEmail');
+
+            showMessage('Logged out successfully');
+            showAuthSection();
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            console.log('Switching to tab:', tabName);
+
+            // Hide all tabs
+            document.getElementById('textTab').classList.remove('active');
+            document.getElementById('urlTab').classList.remove('active');
+
+            // Remove active class from all buttons
+            document.getElementById('textTabBtn').classList.remove('active');
+            document.getElementById('urlTabBtn').classList.remove('active');
+
+            // Show selected tab
+            if (tabName === 'text') {
+                document.getElementById('textTab').classList.add('active');
+                document.getElementById('textTabBtn').classList.add('active');
+            } else {
+                document.getElementById('urlTab').classList.add('active');
+                document.getElementById('urlTabBtn').classList.add('active');
+            }
+        }
+
+        // Summarization functions
+        async function summarizeText() {
+            const text = document.getElementById('inputText').value;
+            const summaryLength = document.getElementById('summaryLength').value;
+            const outputLanguage = document.getElementById('outputLanguage').value;
+
+            if (!text || text.trim().length < 10) {
+                showMessage('Please enter at least 10 characters of text', 'error');
+                return;
+            }
+
+            showLoading('summarizeLoading');
+            document.getElementById('summarizeBtn').disabled = true;
+
+            try {
+                const result = await apiCall('/api/summarize', 'POST', {
+                    text: text.trim(),
+                    summaryLength,
+                    outputLanguage
+                });
+
+                displaySummaryResult(result.data);
+                showMessage('Text summarized successfully!');
+
+            } catch (error) {
+                showMessage(error.message, 'error');
+            } finally {
+                showLoading('summarizeLoading', false);
+                document.getElementById('summarizeBtn').disabled = false;
+            }
+        }
+
+        async function summarizeUrl() {
+            const url = document.getElementById('inputUrl').value;
+            const summaryLength = document.getElementById('urlSummaryLength').value;
+            const outputLanguage = document.getElementById('urlOutputLanguage').value;
+
+            if (!url) {
+                showMessage('Please enter a valid URL', 'error');
+                return;
+            }
+
+            showLoading('urlLoading');
+            document.getElementById('summarizeUrlBtn').disabled = true;
+
+            try {
+                const result = await apiCall('/api/summarize-url', 'POST', {
+                    url: url.trim(),
+                    summaryLength,
+                    outputLanguage
+                });
+
+                displayUrlSummaryResult(result.data);
+                showMessage('URL summarized successfully!');
+
+            } catch (error) {
+                showMessage(error.message, 'error');
+            } finally {
+                showLoading('urlLoading', false);
+                document.getElementById('summarizeUrlBtn').disabled = false;
+            }
+        }
+
+        // Display functions
+        function displaySummaryResult(data) {
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = `
+                <div class="result-section">
+                    <h4>📝 Summary Result</h4>
+                    <p><strong>Summary:</strong> ${data.summary}</p>
+                    <div class="stats">
+                        <strong>Statistics:</strong><br>
+                        • Original length: ${data.statistics.originalLength} characters<br>
+                        • Summary length: ${data.statistics.summaryCharCount} characters<br>
+                        • Compression ratio: ${data.statistics.compressionRatio}<br>
+                        • Processing time: ${data.statistics.processingTimeMs}ms<br>
+                        • Language: ${data.outputLanguage}<br>
+                        • Length setting: ${data.summaryLength}
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayUrlSummaryResult(data) {
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = `
+                <div class="result-section">
+                    <h4>🔗 URL Summary Result</h4>
+                    <p><strong>Source:</strong> <a href="${data.sourceUrl}" target="_blank">${data.sourceUrl}</a></p>
+                    <p><strong>Summary:</strong> ${data.summary}</p>
+                    <div class="stats">
+                        <strong>Statistics:</strong><br>
+                        • Summary length: ${data.statistics.summaryCharCount} characters<br>
+                        • Processing time: ${data.statistics.processingTimeMs}ms<br>
+                        • Language: ${data.outputLanguage}<br>
+                        • Length setting: ${data.summaryLength}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Clear functions
+        function clearTextForm() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('resultContainer').innerHTML = '';
+        }
+
+        function clearUrlForm() {
+            document.getElementById('inputUrl').value = '';
+            document.getElementById('resultContainer').innerHTML = '';
+        }
+
+        // Utility functions
+        function showMessage(message, type = 'success') {
+            const container = document.getElementById('messageContainer');
+            container.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        function showLoading(elementId, show = true) {
+            const loading = document.getElementById(elementId);
+            if (loading) {
+                if (show) {
+                    loading.classList.remove('hidden');
+                } else {
+                    loading.classList.add('hidden');
+                }
+            }
+        }
+
+        // Debug functions for testing
+        window.testAuth = function () {
+            console.log('Current auth state:', {
+                authToken: !!authToken,
+                userEmail: userEmail,
+                loginBtn: !!document.getElementById('loginBtn'),
+                registerBtn: !!document.getElementById('registerBtn')
+            });
+        };
+
+        window.forceLogin = function () {
+            authToken = 'test-token';
+            userEmail = 'test@example.com';
+            localStorage.setItem('authToken', authToken);
+            localStorage.setItem('userEmail', userEmail);
+            showMainSection();
+        };
+
+        window.forceLogout = function () {
+            logout();
+        };
+
+        console.log('Script loaded successfully');
+    </script>
+</body>
+
+</html>
