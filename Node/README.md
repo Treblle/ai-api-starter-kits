@@ -78,23 +78,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO treblle_app;
 \q
 ```
 
-#### Step 3: Initialize the database tables
-
-After setting up the database and user, run the initialization script:
-
-```bash
-node init-database.js
-```
-
-You should see:
-
-```
-🚀 Initializing database...
-📅 Connected to PostgreSQL database
-✅ Database tables initialized
-✅ Database initialization completed successfully
-```
-
 ### 3. Environment Setup
 
 ```bash
@@ -129,7 +112,24 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 
 **Note:** If you used different database credentials in Step 2, update the `DATABASE_URL` accordingly.
 
-### 4. Start Development Server
+#### Step 4: Initialize the database tables
+
+After setting up the database and user, run the initialization script:
+
+```bash
+node init-database.js
+```
+
+You should see:
+
+```
+🚀 Initializing database...
+📅 Connected to PostgreSQL database
+✅ Database tables initialized
+✅ Database initialization completed successfully
+```
+
+### 5. Start Development Server
 
 ```bash
 npm run dev
@@ -148,50 +148,9 @@ You should see:
 
 The API will be available at `http://localhost:3000`
 
-### 5. Test with Frontend
+### 6. Test with Frontend
 
 Visit `http://localhost:3000` in your browser to use the included web interface.
-
-## 🔧 Troubleshooting
-
-### Database Permission Issues
-
-If you encounter "permission denied for schema public" errors:
-
-1. **Clean up existing database and users:**
-
-```bash
-psql -U postgres
-```
-
-```sql
--- Remove any existing project databases and users
-DROP DATABASE IF EXISTS treblle_demo;
-DROP DATABASE IF EXISTS treblle_demo5;
-DROP USER IF EXISTS treblle_user;
-DROP USER IF EXISTS treblle_user6;
-
--- Follow the database setup steps above
-```
-
-2. **Verify permissions:**
-
-```sql
--- Connect to your database
-\c treblle_summarizer
-
--- Check user permissions
-\du treblle_app
-
--- Check database ownership
-\l treblle_summarizer
-```
-
-### Common Database Setup Errors
-
-- **"role cannot be dropped because some objects depend on it"**: Run the cleanup commands in the troubleshooting section above
-- **"database does not exist"**: Make sure you created the database with the exact name used in your `.env` file
-- **"authentication failed"**: Verify your password in the `DATABASE_URL` matches what you set when creating the user
 
 ## 🏗️ Architecture
 
@@ -332,15 +291,10 @@ docker run -p 3000:3000 --env-file .env apyhub-summarizer
 - [Treblle Node.js SDK](https://github.com/Treblle/treblle-node)
 - [Aspen API Testing Tool](https://treblle.com/product/aspen)
 
-### ApyHub Resources
-
-- [ApyHub Documentation](https://apyhub.com/docs)
-- [ApyHub API Reference](https://apyhub.com/docs/api)
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Built with ❤️ using Node.js, ApyHub, and Treblle**
+**Built with ❤️ using Node.js, and Treblle**
