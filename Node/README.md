@@ -68,6 +68,34 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 
 Create a PostgreSQL database and update the `DATABASE_URL` in your `.env` file. The application will automatically create the required tables on startup.
 
+```bash
+# Connect to PostgreSQL as superuser
+sudo -u postgres psql
+
+# Create database and user
+CREATE DATABASE treblle_demo;
+CREATE USER treblle_user WITH PASSWORD 'your_secure_password';
+GRANT ALL PRIVILEGES ON DATABASE treblle_demo TO treblle_user;
+
+# Exit PostgreSQL
+\q
+```
+
+#### For Windows Users (Git Bash/MINGW64/PowerShell)
+
+```bash
+# Connect to PostgreSQL (use default postgres user)
+psql -U postgres
+
+# Create database and user
+CREATE DATABASE treblle_demo;
+CREATE USER treblle_user WITH PASSWORD 'your_secure_password';
+GRANT ALL PRIVILEGES ON DATABASE treblle_demo1 TO treblle_user;
+
+# Exit PostgreSQL
+\q
+```
+
 ### 4. Start Development Server
 
 ```bash
