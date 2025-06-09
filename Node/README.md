@@ -27,8 +27,8 @@ A production-grade Node.js API starter kit showcasing **Treblle** monitoring wit
 ### 1. Clone and Install
 
 ```bash
-git clone <repository-url>
-cd nodejs-apyhub-summarizer
+git clone https://github.com/Treblle/ai-api-starter-kits.git
+cd Node
 npm install
 ```
 
