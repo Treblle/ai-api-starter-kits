@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: linkedinify-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - HTTP_ADDR=:8080
+      - DATABASE_DSN=postgres://postgres:postgres@db:5432/linkedinify?sslmode=disable
+      - JWT_SECRET=supersecret
+      - OPENAI_TOKEN=${OPENAI_TOKEN}
+      - TREBLLE_SDK_TOKEN=${TREBLLE_SDK_TOKEN}
+      - TREBLLE_API_KEY=${TREBLLE_API_KEY}
+      - DEBUG=true
+    depends_on:
+      - db
+    networks:
+      - linkedinify-network
+
+  frontend:
+    image: node:20-alpine
+    container_name: linkedinify-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm run dev"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - app
+    networks:
+      - linkedinify-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: linkedinify-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=linkedinify
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./migrations:/docker-entrypoint-initdb.d/
+    ports:
+      - "5432:5432"
+    networks:
+      - linkedinify-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - linkedinify-network
+
+networks:
+  linkedinify-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
